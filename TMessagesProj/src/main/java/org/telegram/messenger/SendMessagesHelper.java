@@ -2655,7 +2655,12 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         newMsg.media_unread = true;
                     }
                 }
-                if (replyToTopMsg == null && suggestionParams == null && msgObj.messageOwner.reply_to != null) {
+                // TubeGram: optionally drop the quoted reply when forwarding a message.
+                if (SharedConfig.forwardWithoutQuote) {
+                    newMsg.flags &= ~8;
+                    newMsg.reply_to = null;
+                }
+                if (!SharedConfig.forwardWithoutQuote && replyToTopMsg == null && suggestionParams == null && msgObj.messageOwner.reply_to != null) {
                     if (
                         !(msgObj.messageOwner.reply_to.reply_to_peer_id == null || MessageObject.peersEqual(msgObj.messageOwner.reply_to.reply_to_peer_id, msgObj.messageOwner.peer_id)) ||
                         ids != null && (msgObj.messageOwner.reply_to.flags & 16) != 0 && ids.contains(msgObj.messageOwner.reply_to.reply_to_msg_id)

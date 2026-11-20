@@ -15796,6 +15796,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         } else {
             signWidth = 0;
         }
+        // TubeGram: show the unique message ID next to the time (Nekogram-style).
+        if (SharedConfig.showMessageId && !messageObject.scheduled && !messageObject.notime && messageObject.getId() > 0) {
+            currentTimeString = TextUtils.concat(currentTimeString, "  #", String.valueOf(messageObject.getId()));
+            timeTextWidth = timeWidth = (int) Math.ceil(Theme.chat_timePaint.measureText(currentTimeString, 0, currentTimeString.length()));
+        }
     }
 
     protected boolean shouldDrawSelectionOverlay() {

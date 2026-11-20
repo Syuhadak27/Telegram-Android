@@ -244,6 +244,14 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
 
     private int rowCount;
 
+    // TubeGram: Nekogram-style message options.
+    private int nekogramHeaderRow;
+    private int showMessageIdRow;
+    private int hideForwardedLabelRow;
+    private int hideJoinLeaveMessagesRow;
+    private int forwardWithoutQuoteRow;
+    private int nekogramSectionRow;
+
     private boolean updatingLocation;
 
     private int previousUpdatedType;
@@ -684,6 +692,12 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         otherSectionRow = -1;
         liteModeRow = -1;
         liteModeInfoRow = -1;
+        nekogramHeaderRow = -1;
+        showMessageIdRow = -1;
+        hideForwardedLabelRow = -1;
+        hideJoinLeaveMessagesRow = -1;
+        forwardWithoutQuoteRow = -1;
+        nekogramSectionRow = -1;
 
         textSizeRow = -1;
         backgroundRow = -1;
@@ -812,6 +826,14 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             sendByEnterRow = rowCount++;
             distanceRow = rowCount++;
             otherSectionRow = rowCount++;
+
+            // TubeGram: Nekogram-style message options.
+            nekogramHeaderRow = rowCount++;
+            showMessageIdRow = rowCount++;
+            hideForwardedLabelRow = rowCount++;
+            hideJoinLeaveMessagesRow = rowCount++;
+            forwardWithoutQuoteRow = rowCount++;
+            nekogramSectionRow = rowCount++;
         } else {
             nightDisabledRow = rowCount++;  // TYPE_THEME_TYPE
             nightScheduledRow = rowCount++; // TYPE_THEME_TYPE
@@ -1486,6 +1508,22 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 if (view instanceof TextCheckCell) {
                     ((TextCheckCell) view).setChecked(SharedConfig.chatBlurEnabled());
                 }
+            } else if (position == showMessageIdRow || position == hideForwardedLabelRow || position == hideJoinLeaveMessagesRow || position == forwardWithoutQuoteRow) {
+                // TubeGram: toggle Nekogram-style message option and refresh open chats.
+                if (position == showMessageIdRow) {
+                    SharedConfig.setShowMessageId(!SharedConfig.showMessageId);
+                    if (view instanceof TextCheckCell) ((TextCheckCell) view).setChecked(SharedConfig.showMessageId);
+                } else if (position == hideForwardedLabelRow) {
+                    SharedConfig.setHideForwardedLabel(!SharedConfig.hideForwardedLabel);
+                    if (view instanceof TextCheckCell) ((TextCheckCell) view).setChecked(SharedConfig.hideForwardedLabel);
+                } else if (position == hideJoinLeaveMessagesRow) {
+                    SharedConfig.setHideJoinLeaveMessages(!SharedConfig.hideJoinLeaveMessages);
+                    if (view instanceof TextCheckCell) ((TextCheckCell) view).setChecked(SharedConfig.hideJoinLeaveMessages);
+                } else {
+                    SharedConfig.setForwardWithoutQuote(!SharedConfig.forwardWithoutQuote);
+                    if (view instanceof TextCheckCell) ((TextCheckCell) view).setChecked(SharedConfig.forwardWithoutQuote);
+                }
+                getNotificationCenter().postNotificationName(NotificationCenter.nekogramSettingsUpdated);
             } else if (position == nightThemeRow) {
                 if (LocaleController.isRTL && x <= dp(76) || !LocaleController.isRTL && x >= view.getMeasuredWidth() - dp(76)) {
                     NotificationsCheckCell checkCell = (NotificationsCheckCell) view;
@@ -2696,6 +2734,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         headerCell.setText(getString("OtherSettings", R.string.OtherSettings));
                     } else if (position == mediaSoundHeaderRow) {
                         headerCell.setText(getString("MediaAndSoundSettings", R.string.MediaAndSoundSettings));
+                    } else if (position == nekogramHeaderRow) {
+                        headerCell.setText(getString(R.string.NekogramHeader));
                     }
                     break;
                 }
@@ -2730,6 +2770,14 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         textCheckCell.setTextAndValueAndCheck(getString(R.string.ShowSensitiveContent), getString(R.string.ShowSensitiveContentInfo), getMessagesController().showSensitiveContent(), true, true);
                     } else if (position == chatBlurRow) {
                         textCheckCell.setTextAndCheck(getString("BlurInChat", R.string.BlurInChat), SharedConfig.chatBlurEnabled(), true);
+                    } else if (position == showMessageIdRow) {
+                        textCheckCell.setTextAndValueAndCheck(getString(R.string.ShowMessageId), getString(R.string.ShowMessageIdInfo), SharedConfig.showMessageId, true, true);
+                    } else if (position == hideForwardedLabelRow) {
+                        textCheckCell.setTextAndValueAndCheck(getString(R.string.HideForwardedLabel), getString(R.string.HideForwardedLabelInfo), SharedConfig.hideForwardedLabel, true, true);
+                    } else if (position == hideJoinLeaveMessagesRow) {
+                        textCheckCell.setTextAndValueAndCheck(getString(R.string.HideJoinLeaveMessages), getString(R.string.HideJoinLeaveMessagesInfo), SharedConfig.hideJoinLeaveMessages, true, true);
+                    } else if (position == forwardWithoutQuoteRow) {
+                        textCheckCell.setTextAndValueAndCheck(getString(R.string.ForwardWithoutQuote), getString(R.string.ForwardWithoutQuoteInfo), SharedConfig.forwardWithoutQuote, false, true);
                     }
                     break;
                 }
@@ -2849,7 +2897,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             } else if (position == themeInfoRow || position == nightTypeInfoRow || position == scheduleFromToInfoRow ||
                     position == settings2Row || position == newThemeInfoRow || position == chatListInfoRow || position == bubbleRadiusInfoRow ||
                     position == saveToGallerySectionRow || position == appIconShadowRow || position == lastShadowRow || position == stickersSectionRow ||
-                    position == mediaSoundSectionRow || position == otherSectionRow) {
+                    position == mediaSoundSectionRow || position == otherSectionRow || position == nekogramSectionRow) {
                 return TYPE_SHADOW;
             } else if (position == nightDisabledRow || position == nightScheduledRow || position == nightAutomaticRow || position == nightSystemDefaultRow) {
                 return TYPE_THEME_TYPE;
@@ -2857,13 +2905,14 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     position == settingsRow || position == themeHeaderRow || position == textSizeHeaderRow ||
                     position == chatListHeaderRow || position == bubbleRadiusHeaderRow || position == swipeGestureHeaderRow ||
                     position == selectThemeHeaderRow || position == appIconHeaderRow || position == mediaSoundHeaderRow ||
-                    position == otherHeaderRow) {
+                    position == otherHeaderRow || position == nekogramHeaderRow) {
                 return TYPE_HEADER;
             } else if (position == automaticBrightnessRow) {
                 return TYPE_BRIGHTNESS;
             } else if (position == scheduleLocationRow || position == sendByEnterRow ||
                     position == raiseToSpeakRow || position == raiseToListenRow || position == pauseOnRecordRow ||
-                    position == directShareRow || position == chatBlurRow || position == pauseOnMediaRow || position == nextMediaTapRow || position == sensitiveContentRow) {
+                    position == directShareRow || position == chatBlurRow || position == pauseOnMediaRow || position == nextMediaTapRow || position == sensitiveContentRow ||
+                    position == showMessageIdRow || position == hideForwardedLabelRow || position == hideJoinLeaveMessagesRow || position == forwardWithoutQuoteRow) {
                 return TYPE_TEXT_CHECK;
             } else if (position == textSizeRow) {
                 return TYPE_TEXT_SIZE;

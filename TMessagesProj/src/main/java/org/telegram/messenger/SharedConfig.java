@@ -350,6 +350,12 @@ public class SharedConfig {
     // TubeGram: hide the default "All Chats" tab from the chat folder tabs.
     public static boolean hideAllChatsTab;
 
+    // TubeGram: Nekogram-style message options.
+    public static boolean showMessageId;
+    public static boolean hideForwardedLabel;
+    public static boolean hideJoinLeaveMessages;
+    public static boolean forwardWithoutQuote;
+
     private static int chatSwipeAction;
 
     public static int distanceSystemType;
@@ -648,6 +654,10 @@ public class SharedConfig {
             useThreeLinesLayout = preferences.getBoolean("useThreeLinesLayout", false);
             archiveHidden = preferences.getBoolean("archiveHidden", false);
             hideAllChatsTab = preferences.getBoolean("hideAllChatsTab", false);
+            showMessageId = preferences.getBoolean("showMessageId", false);
+            hideForwardedLabel = preferences.getBoolean("hideForwardedLabel", false);
+            hideJoinLeaveMessages = preferences.getBoolean("hideJoinLeaveMessages", false);
+            forwardWithoutQuote = preferences.getBoolean("forwardWithoutQuote", false);
             distanceSystemType = preferences.getInt("distanceSystemType", 0);
             keepMedia = preferences.getInt("keep_media", CacheByChatsController.KEEP_MEDIA_ONE_MONTH);
             debugWebView = preferences.getBoolean("debugWebView", false);
@@ -1234,6 +1244,26 @@ public class SharedConfig {
     public static void setHideAllChatsTab(boolean value) {
         hideAllChatsTab = value;
         MessagesController.getGlobalMainSettings().edit().putBoolean("hideAllChatsTab", value).apply();
+    }
+
+    public static void setShowMessageId(boolean value) {
+        showMessageId = value;
+        MessagesController.getGlobalMainSettings().edit().putBoolean("showMessageId", value).apply();
+    }
+
+    public static void setHideForwardedLabel(boolean value) {
+        hideForwardedLabel = value;
+        MessagesController.getGlobalMainSettings().edit().putBoolean("hideForwardedLabel", value).apply();
+    }
+
+    public static void setHideJoinLeaveMessages(boolean value) {
+        hideJoinLeaveMessages = value;
+        MessagesController.getGlobalMainSettings().edit().putBoolean("hideJoinLeaveMessages", value).apply();
+    }
+
+    public static void setForwardWithoutQuote(boolean value) {
+        forwardWithoutQuote = value;
+        MessagesController.getGlobalMainSettings().edit().putBoolean("forwardWithoutQuote", value).apply();
     }
 
     public static void toggleAutoplayVideo() {

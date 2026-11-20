@@ -385,6 +385,8 @@ public class NotificationCenter {
     public static final int webBrowserSettingsUpdate = totalEvents++;
     public static final int communityPendingRequestsUpdate = totalEvents++;
     public static final int communitySwitchedCollapsed = totalEvents++;
+    // TubeGram: fired when Nekogram-style message settings are changed from settings.
+    public static final int nekogramSettingsUpdated = totalEvents++;
 
     public static boolean alreadyLogged;
 

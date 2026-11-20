@@ -11867,7 +11867,26 @@ public class MessageObject {
         return isForwardedMessage(messageOwner);
     }
 
+    /**
+     * TubeGram: messages that only report a member joining or leaving a group.
+     * Used by the "Hide join/leave messages" option.
+     */
+    public static boolean isJoinLeaveMessage(TLRPC.Message message) {
+        if (message == null || message.action == null) {
+            return false;
+        }
+        TLRPC.MessageAction action = message.action;
+        return action instanceof TLRPC.TL_messageActionChatAddUser
+                || action instanceof TLRPC.TL_messageActionChatDeleteUser
+                || action instanceof TLRPC.TL_messageActionChatJoinedByLink
+                || action instanceof TLRPC.TL_messageActionChatJoinedByRequest;
+    }
+
     public boolean needDrawForwarded() {
+        // TubeGram: optionally hide the "Forwarded from ..." header on forwarded messages.
+        if (SharedConfig.hideForwardedLabel && type != MessageObject.TYPE_STORY) {
+            return false;
+        }
         if (type == MessageObject.TYPE_STORY && !isExpiredStory()) {
             return true;
         }

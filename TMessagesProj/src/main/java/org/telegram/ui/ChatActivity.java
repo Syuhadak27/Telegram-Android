@@ -1297,6 +1297,7 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_WELCOME_REVERT = 116;
     public final static int OPTION_SEND_MONEY = 117;
     public final static int OPTION_STOP_LIVE_LOCATION = 118;
+    public final static int OPTION_COPY_MESSAGE_ID = 119;
 
     private final static int[] allowedNotificationsDuringChatListAnimations = new int[]{
             NotificationCenter.messagesRead,
@@ -2899,6 +2900,7 @@ public class ChatActivity extends BaseFragment implements
             .add(NotificationCenter.loadingMessagesFailed)
             .add(NotificationCenter.didUpdateConnectionState)
             .add(NotificationCenter.updateInterfaces)
+            .add(NotificationCenter.nekogramSettingsUpdated)
             .add(NotificationCenter.updateDefaultSendAsPeer)
             .add(NotificationCenter.userIsPremiumBlockedUpadted)
             .add(NotificationCenter.didLoadSendAsPeers)
@@ -22804,6 +22806,12 @@ public class ChatActivity extends BaseFragment implements
             if (headerItem != null) {
                 headerItem.setSubItemShown(open_direct, ChatObject.isChannel(currentChat) && !ChatObject.isMonoForum(currentChat) && currentChat.linked_monoforum_id != 0 && ChatObject.canManageMonoForum(currentAccount, -currentChat.linked_monoforum_id));
             }
+        } else if (id == NotificationCenter.nekogramSettingsUpdated) {
+            // TubeGram: refresh cells/layout when Nekogram-style options change.
+            if (chatAdapter != null) {
+                chatAdapter.updateRowsSafe();
+                chatAdapter.notifyDataSetChanged();
+            }
         } else if (id == NotificationCenter.didReceiveNewMessages) {
             FileLog.d("ChatActivity didReceiveNewMessages start");
             long did = (Long) args[0];
@@ -24108,7 +24116,7 @@ public class ChatActivity extends BaseFragment implements
                 } else if (chatAdapter.isFiltered) {
                     messages = chatAdapter.filteredMessages;
                 } else {
-                    messages = ChatActivity.this.messages;
+                    messages = chatAdapter.getAdapterMessages();
                 }
                 if (messages != null && !messages.contains(messageObject) && args.length > 1 && args[1] != null) {
                     for (int a = 0; a < messages.size(); ++a) {
@@ -24163,7 +24171,7 @@ public class ChatActivity extends BaseFragment implements
                     } else if (chatAdapter.isFiltered) {
                         messages = chatAdapter.filteredMessages;
                     } else {
-                        messages = ChatActivity.this.messages;
+                        messages = chatAdapter.getAdapterMessages();
                     }
                     int index = messages.indexOf(messageObject);
                     if (index >= 0 && index < messages.size()) {
@@ -34400,6 +34408,12 @@ public class ChatActivity extends BaseFragment implements
                 undoView.showWithAction(0, UndoView.ACTION_MESSAGE_COPIED, null);
                 break;
             }
+            case OPTION_COPY_MESSAGE_ID: {
+                if (selectedObject != null && selectedObject.getId() > 0) {
+                    AndroidUtilities.addToClipboard(String.valueOf(selectedObject.getId()));
+                }
+                break;
+            }
             case OPTION_SAVE_TO_GALLERY: {
                 if (Build.VERSION.SDK_INT >= 23 && (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE) && getParentActivity().checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     getParentActivity().requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 4);
@@ -37868,6 +37882,22 @@ public class ChatActivity extends BaseFragment implements
             }
         }
 
+        // TubeGram: list used by the adapter when "Hide join/leave messages" is enabled.
+        private final ArrayList<MessageObject> visibleMessages = new ArrayList<>();
+
+        public ArrayList<MessageObject> getAdapterMessages() {
+            if (SharedConfig.hideJoinLeaveMessages && !isFrozen && !isFiltered) {
+                visibleMessages.clear();
+                for (MessageObject message : ChatActivity.this.messages) {
+                    if (!MessageObject.isJoinLeaveMessage(message.messageOwner)) {
+                        visibleMessages.add(message);
+                    }
+                }
+                return visibleMessages;
+            }
+            return ChatActivity.this.messages;
+        }
+
         public boolean isFrozen;
         public ArrayList<MessageObject> frozenMessages = new ArrayList<>();
 
@@ -37939,7 +37969,7 @@ public class ChatActivity extends BaseFragment implements
             } else if (isFiltered) {
                 messages = filteredMessages;
             } else {
-                messages = ChatActivity.this.messages;
+                messages = getAdapterMessages();
             }
             if (chatMode == MODE_SAVED && isInsideContainer) {
                 hintRow = rowCount++;
@@ -38043,7 +38073,7 @@ public class ChatActivity extends BaseFragment implements
             } else if (isFiltered) {
                 messages = filteredMessages;
             } else {
-                messages = ChatActivity.this.messages;
+                messages = getAdapterMessages();
             }
 
             if (position >= messagesStartRow && position < messagesEndRow) {
@@ -38537,7 +38567,7 @@ public class ChatActivity extends BaseFragment implements
                 } else if (isFiltered) {
                     messages = filteredMessages;
                 } else {
-                    messages = ChatActivity.this.messages;
+                    messages = getAdapterMessages();
                 }
 
                 MessageObject message = messages.get(position - messagesStartRow);
@@ -39093,7 +39123,7 @@ public class ChatActivity extends BaseFragment implements
                 } else if (isFiltered) {
                     messages = filteredMessages;
                 } else {
-                    messages = ChatActivity.this.messages;
+                    messages = getAdapterMessages();
                 }
                 return messages.get(position - messagesStartRow).contentType;
             } else if (position == botInfoRow) {
@@ -39216,7 +39246,7 @@ public class ChatActivity extends BaseFragment implements
                 } else if (isFiltered) {
                     messages = filteredMessages;
                 } else {
-                    messages = ChatActivity.this.messages;
+                    messages = getAdapterMessages();
                 }
 
                 MessageObject message = messages.get(position - messagesStartRow);
@@ -39309,7 +39339,7 @@ public class ChatActivity extends BaseFragment implements
             } else if (isFiltered) {
                 messages = filteredMessages;
             } else {
-                messages = ChatActivity.this.messages;
+                messages = getAdapterMessages();
             }
 
             int index = messages.indexOf(messageObject);
@@ -46685,6 +46715,12 @@ public class ChatActivity extends BaseFragment implements
                 if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isDice() || selectedObject.isAnimatedEmoji() || selectedObject.isAnimatedEmojiStickers() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwardsOrPaidMedia || isEphemeral) && !selectedObject.sponsoredCanReport) {
                     items.add(LocaleController.getString(R.string.Copy));
                     options.add(OPTION_COPY);
+                    icons.add(R.drawable.msg_copy);
+                }
+                // TubeGram: Nekogram-style "Copy message ID" action.
+                if (selectedObject.getId() > 0) {
+                    items.add(LocaleController.getString(R.string.CopyMessageId));
+                    options.add(OPTION_COPY_MESSAGE_ID);
                     icons.add(R.drawable.msg_copy);
                 }
                 if (!isThreadChat() && chatMode != MODE_SCHEDULED && currentChat != null && primaryMessage != null && (currentChat.has_link || primaryMessage.hasReplies()) && currentChat.megagroup && primaryMessage.canViewThread()) {

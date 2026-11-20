@@ -355,6 +355,7 @@ public class SharedConfig {
     public static boolean hideForwardedLabel;
     public static boolean hideJoinLeaveMessages;
     public static boolean forwardWithoutQuote;
+    public static boolean hideOwnPhoneNumber;
 
     private static int chatSwipeAction;
 
@@ -658,6 +659,7 @@ public class SharedConfig {
             hideForwardedLabel = preferences.getBoolean("hideForwardedLabel", false);
             hideJoinLeaveMessages = preferences.getBoolean("hideJoinLeaveMessages", false);
             forwardWithoutQuote = preferences.getBoolean("forwardWithoutQuote", false);
+            hideOwnPhoneNumber = preferences.getBoolean("hideOwnPhoneNumber", false);
             distanceSystemType = preferences.getInt("distanceSystemType", 0);
             keepMedia = preferences.getInt("keep_media", CacheByChatsController.KEEP_MEDIA_ONE_MONTH);
             debugWebView = preferences.getBoolean("debugWebView", false);
@@ -1264,6 +1266,11 @@ public class SharedConfig {
     public static void setForwardWithoutQuote(boolean value) {
         forwardWithoutQuote = value;
         MessagesController.getGlobalMainSettings().edit().putBoolean("forwardWithoutQuote", value).apply();
+    }
+
+    public static void setHideOwnPhoneNumber(boolean value) {
+        hideOwnPhoneNumber = value;
+        MessagesController.getGlobalMainSettings().edit().putBoolean("hideOwnPhoneNumber", value).apply();
     }
 
     public static void toggleAutoplayVideo() {

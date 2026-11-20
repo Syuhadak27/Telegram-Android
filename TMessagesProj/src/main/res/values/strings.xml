@@ -7845,6 +7845,11 @@
     <string name="HideJoinLeaveMessagesInfo">Hide service messages about members joining or leaving groups.</string>
     <string name="ForwardWithoutQuote">Forward Without Quote</string>
     <string name="ForwardWithoutQuoteInfo">Do not carry over the quoted reply when forwarding messages.</string>
+    <string name="HideOwnPhoneNumber">Hide My Phone Number</string>
+    <string name="HideOwnPhoneNumberInfo">Hide your phone number on your own profile.</string>
+    <string name="HiddenPhoneNumber">Hidden</string>
+    <string name="CopyUserId">Copy ID</string>
+    <string name="UserIdCopied">ID copied to clipboard</string>
     <string name="FolderShowTags">Show Folder Tags</string>
     <string name="FolderShowTagsInfo">Display folder names for each chat in the chat list.</string>
     <string name="FolderShowTagsInfoPremium">Subscribe to **Telegram Premium** to display folder names for each chat in the chat list.</string>

@@ -6773,6 +6773,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
+    // TubeGram: the "All Chats" tab is not added to FilterTabsView when it is hidden, so
+    // getDefaultTabId() cannot be used to recognise it. Check the filter itself instead.
+    private static boolean isHiddenAllChatsTab(int tabId, ArrayList<MessagesController.DialogFilter> filters) {
+        return tabId < 0 || tabId >= filters.size() || filters.get(tabId).isDefault();
+    }
+
     private void updateFilterTabs(boolean force, boolean animated) {
         if (filterTabsView == null || inPreviewMode || searchIsShowed || (rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment())) {
             return;
@@ -6806,7 +6812,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 int stableId = filterTabsView.getCurrentTabStableId();
                 boolean selectWithStableId = false;
                 final int defaultTabId = filterTabsView.getDefaultTabId();
-                if (hideAllChats && (id == defaultTabId || id < 0 || id >= filters.size())) {
+                // TubeGram: with the default tab hidden, getDefaultTabId() is -1, so also treat
+                // the stale initial id 0 (which points at the default filter) as "not visible".
+                if (hideAllChats && isHiddenAllChatsTab(id, filters)) {
                     id = firstVisibleTabId;
                     stableId = -1;
                     filterTabsView.resetTabId();
@@ -6831,8 +6839,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (hideAllChats) {
                     for (int a = 0; a < viewPages.length; a++) {
-                        if (viewPages[a].selectedType == defaultTabId) {
+                        // TubeGram: migrate the initial/default selection to the first visible
+                        // folder. Comparing against getDefaultTabId() fails on first open because
+                        // the hidden default tab has no Tab in FilterTabsView (id == -1).
+                        if (isHiddenAllChatsTab(viewPages[a].selectedType, filters)) {
                             viewPages[a].selectedType = firstVisibleTabId;
+                            updateCurrentTab = true;
                         }
                     }
                 }

@@ -614,6 +614,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private final static int enable_no_forwards = 46;
     private final static int disable_no_forwards = 47;
     private final static int send_money = 48;
+    private final static int copy_user_id = 49;
 
     private Rect rect = new Rect();
 
@@ -2224,6 +2225,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         sharedMediaPreloader.addDelegate(this);
 
         getNotificationCenter().addWeakObserver(this, NotificationCenter.updateInterfaces);
+        getNotificationCenter().addWeakObserver(this, NotificationCenter.nekogramSettingsUpdated);
         getNotificationCenter().addWeakObserver(this, NotificationCenter.didReceiveNewMessages);
         getNotificationCenter().addWeakObserver(this, NotificationCenter.closeChats);
         getNotificationCenter().addWeakObserver(this, NotificationCenter.closeProfileActivity);
@@ -2373,6 +2375,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
 
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
+        getNotificationCenter().removeObserver(this, NotificationCenter.nekogramSettingsUpdated);
         getNotificationCenter().removeObserver(this, NotificationCenter.closeChats);
         getNotificationCenter().removeObserver(this, NotificationCenter.closeProfileActivity);
         getNotificationCenter().removeObserver(this, NotificationCenter.didReceiveNewMessages);
@@ -2838,6 +2841,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     TLRPC.User user = getMessagesController().getUser(userId);
                     if (AndroidUtilities.addToClipboard(getMessagesController().linkPrefix + "/" + UserObject.getPublicUsername(user))) {
                         BulletinFactory.of(ProfileActivity.this).createCopyLinkBulletin().show();
+                    }
+                } else if (id == copy_user_id) {
+                    // TubeGram: copy the numeric ID of the current user/chat (always positive).
+                    long peerId = Math.abs(getDialogId());
+                    if (peerId != 0 && AndroidUtilities.addToClipboard(String.valueOf(peerId))) {
+                        BulletinFactory.of(ProfileActivity.this).createCopyBulletin(LocaleController.getString(R.string.UserIdCopied)).show();
                     }
                 } else if (id == set_username) {
                     presentFragment(new ChangeUsernameActivity());
@@ -7550,6 +7559,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         } else if (position == noteRow) {
 
         } else if (position == phoneRow || position == numberRow) {
+            // TubeGram: do not reveal/copy my own number while it is hidden.
+            if (SharedConfig.hideOwnPhoneNumber && (myProfile || position == numberRow)) {
+                return false;
+            }
             if (editRow(view, position)) return true;
 
             final TLRPC.User user = getMessagesController().getUser(userId);
@@ -9300,6 +9313,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     public void didReceivedNotification(int id, int account, final Object... args) {
         if (id == NotificationCenter.uploadStoryEnd || id == NotificationCenter.chatWasBoostedByUser) {
             checkCanSendStoryForPosting();
+        } else if (id == NotificationCenter.nekogramSettingsUpdated) {
+            // TubeGram: refresh the phone number cell after toggling "Hide My Phone Number".
+            if (listAdapter != null) {
+                listAdapter.notifyDataSetChanged();
+            }
         } else if (id == NotificationCenter.updateInterfaces) {
             int mask = (Integer) args[0];
             boolean infoChanged = (mask & MessagesController.UPDATE_MASK_AVATAR) != 0 || (mask & MessagesController.UPDATE_MASK_NAME) != 0 || (mask & MessagesController.UPDATE_MASK_STATUS) != 0 || (mask & MessagesController.UPDATE_MASK_EMOJI_STATUS) != 0;
@@ -12561,6 +12579,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         } else {
             otherItem.addSubItem(gallery_menu_save, R.drawable.msg_gallery, LocaleController.getString(R.string.SaveToGallery));
         }
+        // TubeGram: Nekogram-style "Copy ID" for users and chats/channels.
+        if (getDialogId() != 0) {
+            otherItem.addSubItem(copy_user_id, R.drawable.msg_copy, LocaleController.getString(R.string.CopyUserId));
+        }
         if (isPeerNoForwards()) {
             otherItem.hideSubItem(gallery_menu_save);
         }
@@ -13657,7 +13679,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         String text;
                         TLRPC.User user = getMessagesController().getUser(userId);
                         String phoneNumber;
-                        if (user != null && !TextUtils.isEmpty(vcardPhone)) {
+                        // TubeGram: hide the phone number on my own profile when the option is on.
+                        if (myProfile && SharedConfig.hideOwnPhoneNumber) {
+                            text = LocaleController.getString(R.string.HiddenPhoneNumber);
+                            phoneNumber = null;
+                        } else if (user != null && !TextUtils.isEmpty(vcardPhone)) {
                             text = PhoneFormat.getInstance().format("+" + vcardPhone);
                             phoneNumber = vcardPhone;
                         } else if (user != null && !TextUtils.isEmpty(user.phone)) {
@@ -13754,7 +13780,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     } else if (position == numberRow) {
                         TLRPC.User user = UserConfig.getInstance(currentAccount).getCurrentUser();
                         String value;
-                        if (user != null && user.phone != null && user.phone.length() != 0) {
+                        // TubeGram: hide the phone number in my own profile/settings when enabled.
+                        if (SharedConfig.hideOwnPhoneNumber) {
+                            value = LocaleController.getString(R.string.HiddenPhoneNumber);
+                        } else if (user != null && user.phone != null && user.phone.length() != 0) {
                             value = PhoneFormat.getInstance().format("+" + user.phone);
                         } else {
                             value = LocaleController.getString(R.string.NumberUnknown);

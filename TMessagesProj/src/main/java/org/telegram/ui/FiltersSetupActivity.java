@@ -39,6 +39,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
@@ -691,6 +692,10 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             presentFragment(new PremiumPreviewFragment("settings"));
         }) : LocaleController.getString(R.string.FolderShowTagsInfo)));
 
+        // TubeGram: option to hide the "All Chats" tab from the folder tab strip.
+        items.add(ItemInner.asCheck(LocaleController.getString(R.string.FolderHideAllChats), 1));
+        items.add(ItemInner.asShadow(LocaleController.getString(R.string.FolderHideAllChatsInfo)));
+
         if (adapter != null) {
             if (animated) {
                 adapter.setItems(oldItems, items);
@@ -797,6 +802,12 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                 return;
             }
             if (item.viewType == VIEW_TYPE_CHECK) {
+                if (item.id == 1) {
+                    SharedConfig.setHideAllChatsTab(!SharedConfig.hideAllChatsTab);
+                    ((TextCheckCell) view).setChecked(SharedConfig.hideAllChatsTab);
+                    getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
+                    return;
+                }
                 if (!getUserConfig().isPremium()) {
                     showDialog(new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_FOLDER_TAGS, true));
                     return;
@@ -909,6 +920,7 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
         CharSequence text;
         MessagesController.DialogFilter filter;
         int filterColor;
+        int id;
         TLRPC.TL_dialogFilterSuggested suggested;
 
         public static ItemInner asHeader(CharSequence text) {
@@ -941,8 +953,13 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             return i;
         }
         public static ItemInner asCheck(CharSequence text) {
+            return asCheck(text, 0);
+        }
+
+        public static ItemInner asCheck(CharSequence text, int id) {
             ItemInner i = new ItemInner(VIEW_TYPE_CHECK);
             i.text = text;
+            i.id = id;
             return i;
         }
 
@@ -1199,8 +1216,13 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                 }
                 case VIEW_TYPE_CHECK: {
                     TextCheckCell cell = (TextCheckCell) holder.itemView;
-                    cell.setTextAndCheck(item.text, getMessagesController().folderTags, divider);
-                    cell.setCheckBoxIcon(!getUserConfig().isPremium() ? R.drawable.permission_locked : 0);
+                    if (item.id == 1) {
+                        cell.setTextAndCheck(item.text, SharedConfig.hideAllChatsTab, divider);
+                        cell.setCheckBoxIcon(0);
+                    } else {
+                        cell.setTextAndCheck(item.text, getMessagesController().folderTags, divider);
+                        cell.setCheckBoxIcon(!getUserConfig().isPremium() ? R.drawable.permission_locked : 0);
+                    }
                     break;
                 }
                 case VIEW_TYPE_FILTER_SUGGESTION: {

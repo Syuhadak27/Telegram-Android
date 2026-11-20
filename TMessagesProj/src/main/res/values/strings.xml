@@ -7832,6 +7832,8 @@
     <string name="PremiumBusinessChatLinksDescription">Create links that start a chat with you, suggesting the first message.</string>
     <string name="PremiumBusinessIntro">Custom Intro</string>
     <string name="PremiumBusinessIntroDescription">Customize the message people see before they start a chat with you.</string>
+    <string name="FolderHideAllChats">Hide All Chats Tab</string>
+    <string name="FolderHideAllChatsInfo">Hide the default \"All Chats\" tab from the chat folders. At least one folder must remain visible.</string>
     <string name="FolderShowTags">Show Folder Tags</string>
     <string name="FolderShowTagsInfo">Display folder names for each chat in the chat list.</string>
     <string name="FolderShowTagsInfoPremium">Subscribe to **Telegram Premium** to display folder names for each chat in the chat list.</string>

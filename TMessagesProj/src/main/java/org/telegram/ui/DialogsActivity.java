@@ -6782,6 +6782,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             filterOptions = null;
         }
         final ArrayList<MessagesController.DialogFilter> filters = getMessagesController().getDialogFilters();
+        // TubeGram: optionally hide the default "All Chats" tab. Keep it when it is the only folder.
+        final boolean hideAllChats = SharedConfig.hideAllChatsTab && filters.size() > 1;
+        int firstVisibleTabId = 0;
+        if (hideAllChats) {
+            for (int a = 0; a < filters.size(); a++) {
+                if (!filters.get(a).isDefault()) {
+                    firstVisibleTabId = a;
+                    break;
+                }
+            }
+        }
         if (filters.size() > 1) {
             if (force || filterTabsView.getVisibility() != View.VISIBLE) {
                 boolean animatedUpdateItems = animated;
@@ -6794,17 +6805,35 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 int id = filterTabsView.getCurrentTabId();
                 int stableId = filterTabsView.getCurrentTabStableId();
                 boolean selectWithStableId = false;
-                if (id != filterTabsView.getDefaultTabId() && id >= filters.size()) {
+                final int defaultTabId = filterTabsView.getDefaultTabId();
+                if (hideAllChats && (id == defaultTabId || id < 0 || id >= filters.size())) {
+                    id = firstVisibleTabId;
+                    stableId = -1;
+                    filterTabsView.resetTabId();
+                    selectWithStableId = true;
+                    updateCurrentTab = true;
+                }
+                if (id != defaultTabId && id >= filters.size()) {
                     filterTabsView.resetTabId();
                     selectWithStableId = true;
                 }
                 filterTabsView.removeTabs();
                 for (int a = 0, N = filters.size(); a < N; a++) {
                     if (filters.get(a).isDefault()) {
+                        if (hideAllChats) {
+                            continue;
+                        }
                         filterTabsView.addTab(a, 0, LocaleController.getString(R.string.FilterAllChats), null, false, true, filters.get(a).locked);
                     } else {
                         final MessagesController.DialogFilter filter = filters.get(a);
                         filterTabsView.addTab(a, filter.localId, filter.name, filter.entities, filter.title_noanimate, false, filters.get(a).locked);
+                    }
+                }
+                if (hideAllChats) {
+                    for (int a = 0; a < viewPages.length; a++) {
+                        if (viewPages[a].selectedType == defaultTabId) {
+                            viewPages[a].selectedType = firstVisibleTabId;
+                        }
                     }
                 }
                 if (stableId >= 0) {

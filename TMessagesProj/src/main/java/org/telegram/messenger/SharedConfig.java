@@ -347,6 +347,9 @@ public class SharedConfig {
     public static boolean useThreeLinesLayout;
     public static boolean archiveHidden;
 
+    // TubeGram: hide the default "All Chats" tab from the chat folder tabs.
+    public static boolean hideAllChatsTab;
+
     private static int chatSwipeAction;
 
     public static int distanceSystemType;
@@ -644,6 +647,7 @@ public class SharedConfig {
             directShareHash = preferences.getString("directShareHash2", null);
             useThreeLinesLayout = preferences.getBoolean("useThreeLinesLayout", false);
             archiveHidden = preferences.getBoolean("archiveHidden", false);
+            hideAllChatsTab = preferences.getBoolean("hideAllChatsTab", false);
             distanceSystemType = preferences.getInt("distanceSystemType", 0);
             keepMedia = preferences.getInt("keep_media", CacheByChatsController.KEEP_MEDIA_ONE_MONTH);
             debugWebView = preferences.getBoolean("debugWebView", false);
@@ -1225,6 +1229,11 @@ public class SharedConfig {
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("archiveHidden", archiveHidden);
         editor.apply();
+    }
+
+    public static void setHideAllChatsTab(boolean value) {
+        hideAllChatsTab = value;
+        MessagesController.getGlobalMainSettings().edit().putBoolean("hideAllChatsTab", value).apply();
     }
 
     public static void toggleAutoplayVideo() {

@@ -1,9 +1,14 @@
 .idea/
 .gradle/
 build/
+**/.cxx/
 obj/
 *.iml
 local.properties
+.nomedia
+
+# Keep these tracked on purpose: launcher art, release keystore and CI workflow.
+# (Do NOT add icon.png, release.keystore or .github/ here.)
 TMessagesProj/.cxx/
 TMessagesProj/jniLibs/
 TMessagesProj/jniRes/

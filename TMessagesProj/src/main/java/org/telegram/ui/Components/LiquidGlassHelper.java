@@ -65,7 +65,7 @@ public final class LiquidGlassHelper {
         return SharedConfig.liquidGlassEnabled;
     }
 
-    public static float dp(float value) {
+    public static int dp(float value) {
         return AndroidUtilities.dp(value);
     }
 
@@ -172,16 +172,17 @@ public final class LiquidGlassHelper {
 
         @Override
         public void draw(@NonNull Canvas canvas) {
-            RectF bounds = getBounds();
-            if (bounds.isEmpty() || radius <= 0) {
+            android.graphics.Rect b = getBounds();
+            if (b.isEmpty() || radius <= 0) {
                 return;
             }
+            final RectF bounds = OUTLINE_RECT;
+            bounds.set(b.left, b.top, b.right, b.bottom);
             int background = dark ? DARK_BACKGROUND : LIGHT_BACKGROUND;
             int border = dark ? DARK_BORDER : LIGHT_BORDER;
 
-            OUTLINE_RECT.set(bounds.left, bounds.top, bounds.right, bounds.bottom);
             OUTLINE_PATH.reset();
-            OUTLINE_PATH.addRoundRect(OUTLINE_RECT, radius, radius, Path.Direction.CW);
+            OUTLINE_PATH.addRoundRect(bounds, radius, radius, Path.Direction.CW);
 
             FILL_PAINT.setStyle(Paint.Style.FILL);
             FILL_PAINT.setColor(applyAlpha(background));

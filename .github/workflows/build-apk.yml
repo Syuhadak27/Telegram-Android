@@ -6,13 +6,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
     name: Build afatRelease
     runs-on: ubuntu-latest
     timeout-minutes: 180
+
+    env:
+      CCACHE_DIR: /home/runner/.ccache
 
     steps:
       - name: Checkout source (with submodules)
@@ -42,6 +45,51 @@ jobs:
         with:
           packages: ''
 
+      # NDK/CMake downloads are the slowest part of a fresh runner. Cache the exact
+      # versions used by build.gradle so repeat runs skip the sdkmanager download.
+      - name: Cache Android SDK components (platform, build-tools, NDK, CMake)
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/android/sdk/ndk/27.2.12479018
+            /usr/local/lib/android/sdk/cmake/3.22.1
+            /usr/local/lib/android/sdk/platforms/android-36
+            /usr/local/lib/android/sdk/build-tools/36.0.0
+          key: ${{ runner.os }}-android-sdk-36-ndk27.2.12479018-cmake3.22.1-v1
+          restore-keys: |
+            ${{ runner.os }}-android-sdk-
+
+      # AGP keeps its own cache (dexing / resource merging) separate from Gradle's.
+      - name: Cache AGP build cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/build-cache
+          key: ${{ runner.os }}-agp-build-${{ hashFiles('gradle.properties', 'build.gradle', '**/build.gradle', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-agp-build-
+
+      # ccache keys native objects by preprocessed source, so the cache key does not
+      # need to change when only C/C++ sources change.
+      - name: Cache ccache (native C/C++ objects)
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.ccache
+          key: ${{ runner.os }}-ccache-ndk27-v1
+          restore-keys: |
+            ${{ runner.os }}-ccache-ndk27-
+
+      - name: Set up ccache
+        run: |
+          if ! command -v ccache >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq ccache
+          fi
+          ccache --version
+          (ccache --set-config=max_size=2G || true)
+          (ccache --set-config=compression=true || true)
+          (ccache --set-config=sloppiness=include_file_mtime,time_macros || true)
+          ccache -s
+
       - name: Install SDK platform, build-tools, NDK and CMake
         run: |
           yes | sdkmanager --licenses > /dev/null
@@ -70,8 +118,13 @@ jobs:
       - name: Build signed release APK
         run: |
           ./gradlew :TMessagesProj_App:assembleAfatRelease \
+            --build-cache \
             --stacktrace \
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+
+      - name: Show ccache stats
+        if: always()
+        run: ccache -s || true
 
       - name: Upload signed APK
         uses: actions/upload-artifact@v4
@@ -80,3 +133,28 @@ jobs:
           path: TMessagesProj_App/build/outputs/apk/afat/release/app.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Read app version
+        id: version
+        run: |
+          VERSION=$(grep '^APP_VERSION_NAME=' gradle.properties | cut -d= -f2)
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Publishes/updates the release named after the app version so the in-app
+      # "Check for Updates" can find the APK at /releases/latest.
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: TubeGram ${{ steps.version.outputs.name }}
+          body: |
+            TubeGram Android ${{ steps.version.outputs.name }} (${{ steps.version.outputs.tag }})
+
+            Commit: ${{ github.sha }}
+          files: TMessagesProj_App/build/outputs/apk/afat/release/app.apk
+          overwrite_files: true
+          generate_release_notes: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

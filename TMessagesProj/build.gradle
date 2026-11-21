@@ -144,6 +144,13 @@ android {
         coreLibraryDesugaringEnabled true
     }
 
+    // TubeGram: in CI (CCACHE_DIR set) route NDK compiles through ccache so unchanged
+    // native objects are reused between workflow runs. Local builds are unaffected.
+    def ccacheArgs = []
+    if (System.getenv("CCACHE_DIR")) {
+        ccacheArgs = ['-DCMAKE_C_COMPILER_LAUNCHER=ccache', '-DCMAKE_CXX_COMPILER_LAUNCHER=ccache']
+    }
+
     defaultConfig {
         minSdkVersion 23
         targetSdkVersion 36
@@ -155,7 +162,7 @@ android {
         externalNativeBuild {
             cmake {
                 version '3.22.1'
-                arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-23' //, '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+                arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-23', *ccacheArgs //, '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
                 targets 'tmessages.49', 'twidget'
             }
         }

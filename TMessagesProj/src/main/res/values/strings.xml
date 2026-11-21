@@ -7850,6 +7850,16 @@
     <string name="HiddenPhoneNumber">Hidden</string>
     <string name="CopyUserId">Copy ID</string>
     <string name="UserIdCopied">ID copied to clipboard</string>
+    <string name="CheckForUpdates">Check for Updates</string>
+    <string name="UpdateCheckFailedTitle">Update Check Failed</string>
+    <string name="UpdateCheckFailed">Could not check for updates. Please try again later.</string>
+    <string name="UpdateNoAvailable">You are up to date (v%1$s).</string>
+    <string name="UpdateAvailableTitle">Update Available</string>
+    <string name="UpdateAvailableMessage">Version %1$s is available. You are using v%2$s.</string>
+    <string name="UpdateDownload">Download</string>
+    <string name="UpdateDownloading">Downloading update\u2026</string>
+    <string name="UpdateDownloadingPercent">Downloading update\u2026 %1$d%%</string>
+    <string name="UpdateOpenBrowser">Open in Browser</string>
     <string name="FolderShowTags">Show Folder Tags</string>
     <string name="FolderShowTagsInfo">Display folder names for each chat in the chat list.</string>
     <string name="FolderShowTagsInfoPremium">Subscribe to **Telegram Premium** to display folder names for each chat in the chat list.</string>

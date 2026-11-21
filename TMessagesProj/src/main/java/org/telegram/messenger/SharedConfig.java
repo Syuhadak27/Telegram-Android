@@ -357,6 +357,10 @@ public class SharedConfig {
     public static boolean forwardWithoutQuote;
     public static boolean hideOwnPhoneNumber;
 
+    // TubeGram: liquid glass UI is a mirror of LiteMode.FLAG_LIQUID_GLASS so it can be
+    // exposed from Chat Settings while reusing Telegram's native blur3 render pipeline.
+    public static boolean liquidGlassEnabled = false;
+
     private static int chatSwipeAction;
 
     public static int distanceSystemType;
@@ -660,6 +664,17 @@ public class SharedConfig {
             hideJoinLeaveMessages = preferences.getBoolean("hideJoinLeaveMessages", false);
             forwardWithoutQuote = preferences.getBoolean("forwardWithoutQuote", false);
             hideOwnPhoneNumber = preferences.getBoolean("hideOwnPhoneNumber", false);
+            // TubeGram: default to false, but honour an existing LiteMode liquid glass choice.
+            if (preferences.contains("liquid_glass_enabled")) {
+                liquidGlassEnabled = preferences.getBoolean("liquid_glass_enabled", false);
+            } else {
+                liquidGlassEnabled = LiteMode.isEnabledSetting(LiteMode.FLAG_LIQUID_GLASS);
+                preferences.edit().putBoolean("liquid_glass_enabled", liquidGlassEnabled).apply();
+            }
+            // Keep Telegram's native render pipeline in sync with the persisted preference.
+            if (liquidGlassEnabled != LiteMode.isEnabledSetting(LiteMode.FLAG_LIQUID_GLASS)) {
+                LiteMode.toggleFlag(LiteMode.FLAG_LIQUID_GLASS, liquidGlassEnabled);
+            }
             distanceSystemType = preferences.getInt("distanceSystemType", 0);
             keepMedia = preferences.getInt("keep_media", CacheByChatsController.KEEP_MEDIA_ONE_MONTH);
             debugWebView = preferences.getBoolean("debugWebView", false);
@@ -1271,6 +1286,37 @@ public class SharedConfig {
     public static void setHideOwnPhoneNumber(boolean value) {
         hideOwnPhoneNumber = value;
         MessagesController.getGlobalMainSettings().edit().putBoolean("hideOwnPhoneNumber", value).apply();
+    }
+
+    /**
+     * TubeGram: enables/disables liquid glass. Updates the persisted mirror, Telegram's
+     * native LiteMode flag (which drives the real blur3 render pipeline) and notifies UI.
+     * Safe to call repeatedly with the same value.
+     */
+    public static void toggleLiquidGlass(boolean enabled) {
+        if (liquidGlassEnabled == enabled && LiteMode.isEnabledSetting(LiteMode.FLAG_LIQUID_GLASS) == enabled) {
+            return;
+        }
+        liquidGlassEnabled = enabled;
+        MessagesController.getGlobalMainSettings().edit().putBoolean("liquid_glass_enabled", enabled).apply();
+        if (LiteMode.isEnabledSetting(LiteMode.FLAG_LIQUID_GLASS) != enabled) {
+            LiteMode.toggleFlag(LiteMode.FLAG_LIQUID_GLASS, enabled);
+        }
+        // Refresh cached glass settings and all listeners in one place.
+        org.telegram.utils.glass.GlassEngine.getCurrentGlassSettings();
+        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.liquidGlassUpdated);
+    }
+
+    /** Called by Lite Mode settings so both switches stay in sync. */
+    public static void syncLiquidGlassFromLiteMode() {
+        boolean enabled = LiteMode.isEnabledSetting(LiteMode.FLAG_LIQUID_GLASS);
+        if (liquidGlassEnabled == enabled) {
+            return;
+        }
+        liquidGlassEnabled = enabled;
+        MessagesController.getGlobalMainSettings().edit().putBoolean("liquid_glass_enabled", enabled).apply();
+        org.telegram.utils.glass.GlassEngine.getCurrentGlassSettings();
+        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.liquidGlassUpdated);
     }
 
     public static void toggleAutoplayVideo() {

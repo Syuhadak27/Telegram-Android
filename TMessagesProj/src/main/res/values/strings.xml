@@ -7848,6 +7848,8 @@
     <string name="HideOwnPhoneNumber">Hide My Phone Number</string>
     <string name="HideOwnPhoneNumberInfo">Hide your phone number on your own profile.</string>
     <string name="HiddenPhoneNumber">Hidden</string>
+    <string name="LiquidGlassUI">Liquid Glass UI</string>
+    <string name="LiquidGlassUIInfo">Enable translucent frosted glass bars and floating navigation</string>
     <string name="CopyUserId">Copy ID</string>
     <string name="UserIdCopied">ID copied to clipboard</string>
     <string name="CheckForUpdates">Check for Updates</string>

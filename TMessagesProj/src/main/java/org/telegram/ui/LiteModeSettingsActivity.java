@@ -146,6 +146,9 @@ public class LiteModeSettingsActivity extends BaseFragment {
                 }
                 boolean value = LiteMode.isEnabledSetting(item.flags);
                 LiteMode.toggleFlag(item.flags, !value);
+                if (item.flags == LiteMode.FLAG_LIQUID_GLASS) {
+                    SharedConfig.syncLiquidGlassFromLiteMode();
+                }
                 updateValues();
             } else if (item.viewType == VIEW_TYPE_SWITCH2) {
                 if (item.type == SWITCH_TYPE_SMOOTH_TRANSITIONS) {

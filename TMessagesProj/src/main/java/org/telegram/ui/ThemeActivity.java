@@ -251,6 +251,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     private int hideJoinLeaveMessagesRow;
     private int forwardWithoutQuoteRow;
     private int hideOwnPhoneNumberRow;
+    private int liquidGlassUIRow;
     private int nekogramSectionRow;
 
     private boolean updatingLocation;
@@ -699,6 +700,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         hideJoinLeaveMessagesRow = -1;
         forwardWithoutQuoteRow = -1;
         hideOwnPhoneNumberRow = -1;
+        liquidGlassUIRow = -1;
         nekogramSectionRow = -1;
 
         textSizeRow = -1;
@@ -836,6 +838,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             hideJoinLeaveMessagesRow = rowCount++;
             forwardWithoutQuoteRow = rowCount++;
             hideOwnPhoneNumberRow = rowCount++;
+            liquidGlassUIRow = rowCount++;
             nekogramSectionRow = rowCount++;
         } else {
             nightDisabledRow = rowCount++;  // TYPE_THEME_TYPE
@@ -964,6 +967,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
 
     @Override
     public boolean onFragmentCreate() {
+        NotificationCenter.getGlobalInstance().addWeakObserver(this, NotificationCenter.liquidGlassUpdated);
         NotificationCenter.getGlobalInstance().addWeakObserver(this, NotificationCenter.locationPermissionGranted);
         NotificationCenter.getGlobalInstance().addWeakObserver(this, NotificationCenter.didSetNewWallpapper);
         NotificationCenter.getGlobalInstance().addWeakObserver(this, NotificationCenter.themeListUpdated);
@@ -988,6 +992,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
         stopLocationUpdate();
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.liquidGlassUpdated);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.locationPermissionGranted);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didSetNewWallpapper);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.themeListUpdated);
@@ -1006,7 +1011,11 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.locationPermissionGranted) {
+        if (id == NotificationCenter.liquidGlassUpdated) {
+            if (listAdapter != null && liquidGlassUIRow >= 0) {
+                listAdapter.notifyItemChanged(liquidGlassUIRow);
+            }
+        } else if (id == NotificationCenter.locationPermissionGranted) {
             updateSunTime(null, true);
         } else if (id == NotificationCenter.didSetNewWallpapper || id == NotificationCenter.emojiLoaded) {
             if (listView != null) {
@@ -1511,7 +1520,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 if (view instanceof TextCheckCell) {
                     ((TextCheckCell) view).setChecked(SharedConfig.chatBlurEnabled());
                 }
-            } else if (position == showMessageIdRow || position == hideForwardedLabelRow || position == hideJoinLeaveMessagesRow || position == forwardWithoutQuoteRow || position == hideOwnPhoneNumberRow) {
+            } else if (position == showMessageIdRow || position == hideForwardedLabelRow || position == hideJoinLeaveMessagesRow || position == forwardWithoutQuoteRow || position == hideOwnPhoneNumberRow || position == liquidGlassUIRow) {
                 // TubeGram: toggle Nekogram-style message option and refresh open chats.
                 if (position == showMessageIdRow) {
                     SharedConfig.setShowMessageId(!SharedConfig.showMessageId);
@@ -1525,9 +1534,12 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 } else if (position == forwardWithoutQuoteRow) {
                     SharedConfig.setForwardWithoutQuote(!SharedConfig.forwardWithoutQuote);
                     if (view instanceof TextCheckCell) ((TextCheckCell) view).setChecked(SharedConfig.forwardWithoutQuote);
-                } else {
+                } else if (position == hideOwnPhoneNumberRow) {
                     SharedConfig.setHideOwnPhoneNumber(!SharedConfig.hideOwnPhoneNumber);
                     if (view instanceof TextCheckCell) ((TextCheckCell) view).setChecked(SharedConfig.hideOwnPhoneNumber);
+                } else {
+                    SharedConfig.toggleLiquidGlass(!SharedConfig.liquidGlassEnabled);
+                    if (view instanceof TextCheckCell) ((TextCheckCell) view).setChecked(SharedConfig.liquidGlassEnabled);
                 }
                 getNotificationCenter().postNotificationName(NotificationCenter.nekogramSettingsUpdated);
             } else if (position == nightThemeRow) {
@@ -2786,6 +2798,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         textCheckCell.setTextAndValueAndCheck(getString(R.string.ForwardWithoutQuote), getString(R.string.ForwardWithoutQuoteInfo), SharedConfig.forwardWithoutQuote, false, true);
                     } else if (position == hideOwnPhoneNumberRow) {
                         textCheckCell.setTextAndValueAndCheck(getString(R.string.HideOwnPhoneNumber), getString(R.string.HideOwnPhoneNumberInfo), SharedConfig.hideOwnPhoneNumber, true, true);
+                    } else if (position == liquidGlassUIRow) {
+                        textCheckCell.setTextAndValueAndCheck(getString(R.string.LiquidGlassUI), getString(R.string.LiquidGlassUIInfo), SharedConfig.liquidGlassEnabled, true, true);
                     }
                     break;
                 }
@@ -2920,7 +2934,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             } else if (position == scheduleLocationRow || position == sendByEnterRow ||
                     position == raiseToSpeakRow || position == raiseToListenRow || position == pauseOnRecordRow ||
                     position == directShareRow || position == chatBlurRow || position == pauseOnMediaRow || position == nextMediaTapRow || position == sensitiveContentRow ||
-                    position == showMessageIdRow || position == hideForwardedLabelRow || position == hideJoinLeaveMessagesRow || position == forwardWithoutQuoteRow || position == hideOwnPhoneNumberRow) {
+                    position == showMessageIdRow || position == hideForwardedLabelRow || position == hideJoinLeaveMessagesRow || position == forwardWithoutQuoteRow || position == hideOwnPhoneNumberRow || position == liquidGlassUIRow) {
                 return TYPE_TEXT_CHECK;
             } else if (position == textSizeRow) {
                 return TYPE_TEXT_SIZE;

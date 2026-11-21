@@ -2821,6 +2821,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             observersGroup
                 .add(NotificationCenter.dialogsNeedReload)
                 .add(NotificationCenter.dialogFiltersUpdated)
+                .addGlobal(NotificationCenter.liquidGlassUpdated)
                 .add(NotificationCenter.updateInterfaces)
                 .add(NotificationCenter.encryptedChatUpdated)
                 .add(NotificationCenter.contactsDidLoad)
@@ -3102,6 +3103,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (inPreviewMode || AndroidUtilities.isTablet() && folderId != 0 && !isArchive()) {
             actionBar.setOccupyStatusBar(false);
         }
+        // TubeGram: give the chat list ActionBar the liquid glass look. Telegram's
+        // native blur3 pipeline supplies the real blur behind for supported devices.
+        org.telegram.ui.Components.LiquidGlassHelper.applyGlassBackground(
+            actionBar, context, org.telegram.ui.Components.LiquidGlassHelper.ACTION_BAR_RADIUS_DP);
         return actionBar;
     }
 
@@ -10488,6 +10493,19 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @SuppressWarnings("unchecked")
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
+        if (id == NotificationCenter.liquidGlassUpdated) {
+            // TubeGram: apply/restore the glass surface without recreating the screen.
+            if (actionBar != null) {
+                if (org.telegram.ui.Components.LiquidGlassHelper.isEnabled()) {
+                    org.telegram.ui.Components.LiquidGlassHelper.applyGlassBackground(
+                        actionBar, actionBar.getContext(), org.telegram.ui.Components.LiquidGlassHelper.ACTION_BAR_RADIUS_DP);
+                } else {
+                    org.telegram.ui.Components.LiquidGlassHelper.removeGlassBackground(actionBar);
+                }
+                actionBar.invalidate();
+            }
+            return;
+        }
         if (id == NotificationCenter.dialogsNeedReload) {
             if (viewPages == null || dialogsListFrozen) {
                 return;

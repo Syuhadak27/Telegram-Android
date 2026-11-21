@@ -387,6 +387,8 @@ public class NotificationCenter {
     public static final int communitySwitchedCollapsed = totalEvents++;
     // TubeGram: fired when Nekogram-style message settings are changed from settings.
     public static final int nekogramSettingsUpdated = totalEvents++;
+    // TubeGram: fired when the Liquid Glass UI mode is toggled.
+    public static final int liquidGlassUpdated = totalEvents++;
 
     public static boolean alreadyLogged;
 

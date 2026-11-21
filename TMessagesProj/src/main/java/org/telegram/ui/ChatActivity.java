@@ -2969,6 +2969,7 @@ public class ChatActivity extends BaseFragment implements
             .add(NotificationCenter.botForumDraftDelete)
             .add(NotificationCenter.joinedGroup)
             .addGlobal(NotificationCenter.emojiLoaded)
+            .addGlobal(NotificationCenter.liquidGlassUpdated)
             .addGlobal(NotificationCenter.invalidateMotionBackground)
             .addGlobal(NotificationCenter.didSetNewWallpapper)
             .addGlobal(NotificationCenter.didApplyNewTheme)
@@ -21328,6 +21329,17 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
+        if (id == NotificationCenter.liquidGlassUpdated) {
+            // TubeGram: the native blur3 drawables re-read the glass generation on draw;
+            // just invalidate the visible surfaces so the change appears immediately.
+            if (contentView != null) {
+                contentView.invalidate();
+            }
+            if (actionBar != null) {
+                actionBar.invalidate();
+            }
+            return;
+        }
         if (id == NotificationCenter.messagesDidLoad) {
             didReceivedNotification_messagesDidLoad(id, account, args);
         } else {

@@ -61,7 +61,7 @@ public class GitHubUpdateChecker {
     private static void parseAndShow(Activity activity, JSONObject release) {
         String tag = release.optString("tag_name", "");
         String latest = tag.startsWith("v") ? tag.substring(1) : tag;
-        String current = BuildVars.APP_VERSION_NAME;
+        String current = BuildVars.BUILD_VERSION_STRING;
         if (!isNewer(latest, current)) {
             showSimpleDialog(
                 activity,

@@ -98,7 +98,8 @@ public class GitHubUpdateChecker {
         builder.setTitle(LocaleController.getString(R.string.UpdateAvailableTitle));
         builder.setMessage(message);
         if (downloadUrl != null) {
-            builder.setPositiveButton(LocaleController.getString(R.string.UpdateDownload), (dialog, which) -> download(activity, downloadUrl, latest));
+            final String finalDownloadUrl = downloadUrl;
+            builder.setPositiveButton(LocaleController.getString(R.string.UpdateDownload), (dialog, which) -> download(activity, finalDownloadUrl, latest));
         }
         builder.setNeutralButton(LocaleController.getString(R.string.UpdateOpenBrowser), (dialog, which) -> Browser.openUrl(activity, RELEASES_URL));
         builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);

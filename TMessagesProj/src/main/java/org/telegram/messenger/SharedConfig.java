@@ -675,6 +675,9 @@ public class SharedConfig {
             if (liquidGlassEnabled != LiteMode.isEnabledSetting(LiteMode.FLAG_LIQUID_GLASS)) {
                 LiteMode.toggleFlag(LiteMode.FLAG_LIQUID_GLASS, liquidGlassEnabled);
             }
+            if (liquidGlassEnabled && !LiteMode.isEnabledSetting(LiteMode.FLAG_CHAT_BLUR)) {
+                LiteMode.toggleFlag(LiteMode.FLAG_CHAT_BLUR, true);
+            }
             distanceSystemType = preferences.getInt("distanceSystemType", 0);
             keepMedia = preferences.getInt("keep_media", CacheByChatsController.KEEP_MEDIA_ONE_MONTH);
             debugWebView = preferences.getBoolean("debugWebView", false);
@@ -1302,9 +1305,17 @@ public class SharedConfig {
         if (LiteMode.isEnabledSetting(LiteMode.FLAG_LIQUID_GLASS) != enabled) {
             LiteMode.toggleFlag(LiteMode.FLAG_LIQUID_GLASS, enabled);
         }
+        // TubeGram: ChatActivity / DialogsActivity only build their native blur3 glass
+        // factories when chat blur is enabled. Without this flag the liquid glass flag
+        // has visibly no effect, so enable it alongside liquid glass.
+        if (enabled && !LiteMode.isEnabledSetting(LiteMode.FLAG_CHAT_BLUR)) {
+            LiteMode.toggleFlag(LiteMode.FLAG_CHAT_BLUR, true);
+        }
         // Refresh cached glass settings and all listeners in one place.
         org.telegram.utils.glass.GlassEngine.getCurrentGlassSettings();
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.liquidGlassUpdated);
+        // Rebuild fragment views so the new glass flags are picked up on open screens.
+        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.reloadInterface);
     }
 
     /** Called by Lite Mode settings so both switches stay in sync. */

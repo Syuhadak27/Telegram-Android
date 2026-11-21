@@ -1,5 +1,16 @@
 # TubeGram Changelog
 
+## 13.2.6 (7307)
+
+### Added
+- Numeric **ID row** on user/group/channel profiles — tap to copy.
+- Automatic update notification popup from GitHub Releases (once per day).
+- Horizontal **progress bar** in the APK download dialog.
+
+### Fixed
+- Liquid Glass UI now enables the required chat blur flag so the native glass
+  pipeline actually activates; rebuilds visible screens when toggled.
+
 ## 13.2.5 (7306)
 
 ### Added

@@ -7852,6 +7852,7 @@
     <string name="LiquidGlassUIInfo">Enable translucent frosted glass bars and floating navigation</string>
     <string name="CopyUserId">Copy ID</string>
     <string name="UserIdCopied">ID copied to clipboard</string>
+    <string name="ProfileId">ID</string>
     <string name="CheckForUpdates">Check for Updates</string>
     <string name="UpdateCheckFailedTitle">Update Check Failed</string>
     <string name="UpdateCheckFailed">Could not check for updates. Please try again later.</string>

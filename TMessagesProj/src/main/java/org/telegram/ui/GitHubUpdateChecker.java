@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.text.TextUtils;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -12,12 +15,16 @@ import androidx.core.content.FileProvider;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import android.content.SharedPreferences;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.web.HttpGetFileTask;
@@ -33,8 +40,30 @@ public class GitHubUpdateChecker {
     private static final String REPO = "Syuhadak27/Telegram-Android";
     private static final String API_URL = "https://api.github.com/repos/" + REPO + "/releases/latest";
     private static final String RELEASES_URL = "https://github.com/" + REPO + "/releases/latest";
+    private static final String PREFS_NAME = "tubegram_update";
+    private static final String KEY_LAST_AUTO_CHECK = "last_auto_check";
+    private static final long AUTO_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L;
 
     public static void check(Activity activity) {
+        check(activity, false);
+    }
+
+    /** TubeGram: silently checks on app resume and only shows a dialog when an update exists. */
+    public static void checkSilently(Activity activity) {
+        if (activity == null || activity.isFinishing() || !UserConfig.getInstance(UserConfig.selectedAccount).isClientActivated()) {
+            return;
+        }
+        SharedPreferences prefs = MessagesController.getGlobalMainSettings();
+        long last = prefs.getLong(KEY_LAST_AUTO_CHECK, 0L);
+        long now = System.currentTimeMillis();
+        if (now - last < AUTO_CHECK_INTERVAL_MS) {
+            return;
+        }
+        prefs.edit().putLong(KEY_LAST_AUTO_CHECK, now).apply();
+        AndroidUtilities.runOnUIThread(() -> check(activity, true), 2500);
+    }
+
+    private static void check(Activity activity, boolean silent) {
         if (activity == null || activity.isFinishing()) {
             return;
         }
@@ -43,14 +72,18 @@ public class GitHubUpdateChecker {
                 return;
             }
             if (result == null) {
-                showSimpleDialog(activity, LocaleController.getString(R.string.UpdateCheckFailedTitle), LocaleController.getString(R.string.UpdateCheckFailed));
+                if (!silent) {
+                    showSimpleDialog(activity, LocaleController.getString(R.string.UpdateCheckFailedTitle), LocaleController.getString(R.string.UpdateCheckFailed));
+                }
                 return;
             }
             try {
-                parseAndShow(activity, new JSONObject(result));
+                parseAndShow(activity, new JSONObject(result), silent);
             } catch (Exception e) {
                 FileLog.e(e);
-                showSimpleDialog(activity, LocaleController.getString(R.string.UpdateCheckFailedTitle), LocaleController.getString(R.string.UpdateCheckFailed));
+                if (!silent) {
+                    showSimpleDialog(activity, LocaleController.getString(R.string.UpdateCheckFailedTitle), LocaleController.getString(R.string.UpdateCheckFailed));
+                }
             }
         })
             .setHeader("Accept", "application/vnd.github+json")
@@ -58,16 +91,18 @@ public class GitHubUpdateChecker {
             .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, API_URL);
     }
 
-    private static void parseAndShow(Activity activity, JSONObject release) {
+    private static void parseAndShow(Activity activity, JSONObject release, boolean silent) {
         String tag = release.optString("tag_name", "");
         String latest = tag.startsWith("v") ? tag.substring(1) : tag;
         String current = BuildVars.BUILD_VERSION_STRING;
         if (!isNewer(latest, current)) {
-            showSimpleDialog(
-                activity,
-                LocaleController.getString(R.string.CheckForUpdates),
-                LocaleController.formatString(R.string.UpdateNoAvailable, current)
-            );
+            if (!silent) {
+                showSimpleDialog(
+                    activity,
+                    LocaleController.getString(R.string.CheckForUpdates),
+                    LocaleController.formatString(R.string.UpdateNoAvailable, current)
+                );
+            }
             return;
         }
 
@@ -118,13 +153,27 @@ public class GitHubUpdateChecker {
             FileLog.d("could not delete old update apk");
         }
 
-        TextView statusView = new TextView(activity);
         int padding = AndroidUtilities.dp(20);
-        statusView.setPadding(padding, padding, padding, padding);
+
+        TextView statusView = new TextView(activity);
         statusView.setText(LocaleController.getString(R.string.UpdateDownloading));
+
+        ProgressBar progressBar = new ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal);
+        progressBar.setMax(100);
+        progressBar.setProgress(0);
+        LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        barParams.topMargin = AndroidUtilities.dp(12);
+
+        LinearLayout contentView = new LinearLayout(activity);
+        contentView.setOrientation(LinearLayout.VERTICAL);
+        contentView.setPadding(padding, padding, padding, padding);
+        contentView.addView(statusView);
+        contentView.addView(progressBar, barParams);
+
         AlertDialog progressDialog = new AlertDialog.Builder(activity)
             .setTitle(LocaleController.getString(R.string.UpdateDownload))
-            .setView(statusView)
+            .setView(contentView)
             .setNegativeButton(LocaleController.getString(R.string.Cancel), null)
             .create();
         progressDialog.setCanceledOnTouchOutside(false);
@@ -146,6 +195,7 @@ public class GitHubUpdateChecker {
         }, progress -> {
             int percent = Math.max(0, Math.min(100, (int) (progress * 100)));
             statusView.setText(LocaleController.formatString(R.string.UpdateDownloadingPercent, percent));
+            progressBar.setProgress(percent);
         })
             .setDestFile(destination)
             .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, url);

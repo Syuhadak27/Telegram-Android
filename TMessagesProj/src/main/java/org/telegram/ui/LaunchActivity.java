@@ -7279,6 +7279,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             showUpdateActivity(UserConfig.selectedAccount, SharedConfig.pendingAppUpdate, true);
         }
         checkAppUpdate(false, null);
+        // TubeGram: notify about a newer GitHub release (silently, throttled to once/day).
+        org.telegram.ui.GitHubUpdateChecker.checkSilently(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ApplicationLoader.canDrawOverlays = Settings.canDrawOverlays(this);
